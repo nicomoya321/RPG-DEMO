@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DUNGEON AI — RPG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0d0a04;
+    --bg2:      #110e04;
+    --bg3:      #1a1208;
+    --border:   #3d2e0e;
+    --border2:  #2a1e06;
+    --gold:     #c9a84c;
+    --gold2:    #b8972a;
+    --text:     #e8d5a3;
+    --muted:    #b8a88a;
+    --dim:      #8b7355;
+    --dimmer:   #6b5a3e;
+    --red:      #c0392b;
+    --purple:   #8e44ad;
+    --green:    #27ae60;
+  }
+
+  html, body { height: 100%; }
+  body {
+    font-family: 'IM Fell English', serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* Animations */
+  @keyframes floatUp  { 0%{opacity:1;transform:translateY(0)} 100%{opacity:0;transform:translateY(-60px)} }
+  @keyframes fadeIn   { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes pulse    { 0%,100%{opacity:1} 50%{opacity:.4} }
+  @keyframes flicker  { 0%,100%{text-shadow:0 0 30px rgba(201,168,76,.4)} 50%{text-shadow:0 0 60px rgba(201,168,76,.7)} }
+  @keyframes barFill  { from{width:0} to{width:var(--w)} }
+  @keyframes scanline { 0%{transform:translateY(-100%)} 100%{transform:translateY(100vh)} }
+  @keyframes spin     { to{transform:rotate(360deg)} }
+
+  /* Utility */
+  .hidden { display: none !important; }
+  .screen { animation: fadeIn .6s ease; }
+
+  /* ─── API KEY SCREEN ─── */
+  #screen-apikey {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; min-height: 100vh;
+    padding: 2rem; text-align: center;
+  }
+  #screen-apikey .skull { font-size: 56px; margin-bottom: 20px; animation: pulse 3s infinite; }
+  #screen-apikey h1 {
+    font-family: 'Cinzel', serif; font-size: 38px; color: var(--gold);
+    letter-spacing: 5px; margin-bottom: 6px; animation: flicker 4s infinite;
+  }
+  #screen-apikey .subtitle { font-size: 14px; color: var(--dim); font-style: italic; margin-bottom: 4px; }
+  #screen-apikey .divider { width: 60px; height: 2px; background: var(--gold); margin: 20px auto; }
+  #screen-apikey .desc {
+    max-width: 420px; color: var(--muted); line-height: 1.8;
+    font-size: 15px; margin-bottom: 32px;
+  }
+  #screen-apikey .field-label {
+    font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 3px;
+    color: var(--dim); text-transform: uppercase; margin-bottom: 10px; display: block;
+  }
+  #screen-apikey input[type=password] {
+    width: 100%; max-width: 420px; padding: 14px 18px;
+    background: var(--bg2); border: 1px solid var(--border);
+    color: var(--text); font-family: 'IM Fell English', serif;
+    font-size: 16px; border-radius: 2px; outline: none;
+    transition: border-color .2s; margin-bottom: 12px;
+  }
+  #screen-apikey input[type=password]:focus { border-color: var(--gold); }
+  #screen-apikey .hint {
+    font-size: 11px; color: var(--dimmer); font-style: italic;
+    margin-bottom: 28px; max-width: 420px;
+  }
+  #screen-apikey .hint a { color: var(--dim); }
+  #screen-apikey .btn-enter {
+    font-family: 'Cinzel', serif; font-size: 15px; letter-spacing: 3px;
+    padding: 14px 48px; background: var(--gold); color: #0d0a04;
+    border: none; cursor: pointer; text-transform: uppercase;
+    font-weight: 700; border-radius: 2px; transition: background .2s;
+    width: 100%; max-width: 420px;
+  }
+  #screen-apikey .btn-enter:hover { background: var(--gold2); }
+  #screen-apikey .error-msg {
+    margin-top: 14px; font-size: 13px; color: var(--red);
+    font-style: italic; min-height: 20px;
+  }
+
+  /* ─── INTRO ─── */
+  #screen-intro {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; min-height: 100vh; text-align: center; padding: 2rem;
+  }
+  #screen-intro .hero-icon { font-size: 72px; margin-bottom: 20px; }
+  #screen-intro h1 {
+    font-family: 'Cinzel', serif; font-size: 48px; color: var(--gold);
+    letter-spacing: 6px; margin-bottom: 10px; animation: flicker 4s infinite;
+  }
+  #screen-intro .powered { font-size: 14px; color: var(--dim); font-style: italic; margin-bottom: 4px; }
+  #screen-intro .divider { width: 60px; height: 2px; background: var(--gold); margin: 18px auto 24px; }
+  #screen-intro .tagline {
+    max-width: 500px; color: var(--muted); line-height: 1.9;
+    font-size: 17px; margin-bottom: 48px;
+  }
+  #screen-intro .btn-start {
+    font-family: 'Cinzel', serif; font-size: 16px; letter-spacing: 4px;
+    padding: 16px 52px; background: var(--gold); color: #0d0a04;
+    border: none; cursor: pointer; text-transform: uppercase;
+    font-weight: 700; border-radius: 2px; transition: background .2s;
+  }
+  #screen-intro .btn-start:hover { background: var(--gold2); }
+  #screen-intro .api-note {
+    margin-top: 24px; font-size: 11px; color: var(--dimmer);
+    font-style: italic; cursor: pointer;
+  }
+  #screen-intro .api-note:hover { color: var(--dim); }
+
+  /* ─── CREATE ─── */
+  #screen-create { max-width: 640px; margin: 0 auto; padding: 3rem 1.5rem; }
+  #screen-create h2 {
+    font-family: 'Cinzel', serif; font-size: 28px; color: var(--gold);
+    text-align: center; letter-spacing: 4px; margin-bottom: 8px;
+  }
+  #screen-create .divider { width: 40px; height: 2px; background: var(--gold); margin: 0 auto 36px; }
+  .field-block { margin-bottom: 32px; }
+  .field-label-sm {
+    display: block; font-size: 11px; letter-spacing: 3px; color: var(--dim);
+    text-transform: uppercase; margin-bottom: 10px; font-family: 'Cinzel', serif;
+  }
+  .name-input {
+    width: 100%; padding: 13px 18px;
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--text); font-family: 'IM Fell English', serif;
+    font-size: 18px; border-radius: 2px; outline: none; transition: border-color .2s;
+  }
+  .name-input:focus { border-color: var(--gold); }
+  .classes-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+  .class-card {
+    border: 1px solid var(--border); background: var(--bg2);
+    border-radius: 4px; padding: 18px 12px; cursor: pointer;
+    text-align: center; transition: all .2s; user-select: none;
+  }
+  .class-card:hover { border-color: var(--gold); background: var(--bg3); }
+  .class-card.selected { border-color: var(--gold) !important; background: #1e1508 !important; }
+  .class-icon { font-size: 34px; margin-bottom: 10px; }
+  .class-name { font-family: 'Cinzel', serif; font-size: 14px; font-weight: 600; letter-spacing: 1px; margin-bottom: 8px; }
+  .class-desc { font-size: 12px; color: var(--dim); line-height: 1.5; margin-bottom: 10px; }
+  .class-stats { font-size: 11px; color: var(--dimmer); }
+  .btn-row { display: flex; gap: 12px; margin-top: 4px; }
+  .btn-back {
+    flex: 1; padding: 13px; background: transparent;
+    border: 1px solid var(--border); color: var(--dim);
+    font-family: 'Cinzel', serif; font-size: 13px; cursor: pointer;
+    letter-spacing: 2px; border-radius: 2px; transition: all .2s;
+  }
+  .btn-back:hover { border-color: var(--dim); color: var(--muted); }
+  .btn-begin {
+    flex: 2; padding: 13px; border: none;
+    font-family: 'Cinzel', serif; font-size: 14px; letter-spacing: 3px;
+    font-weight: 700; border-radius: 2px; transition: all .2s;
+  }
+  .btn-begin.ready { background: var(--gold); color: #0d0a04; cursor: pointer; }
+  .btn-begin.ready:hover { background: var(--gold2); }
+  .btn-begin.disabled { background: var(--border); color: var(--dimmer); cursor: not-allowed; }
+
+  /* ─── GAME ─── */
+  #screen-game {
+    display: grid; grid-template-columns: 210px 1fr;
+    gap: 16px; max-width: 800px; margin: 0 auto;
+    padding: 1.5rem; min-height: 100vh; align-items: start;
+  }
+
+  /* Sidebar */
+  .sidebar { position: sticky; top: 16px; }
+  .sidebar-box {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 18px;
+  }
+  .hero-portrait { text-align: center; margin-bottom: 18px; }
+  .hero-portrait .icon { font-size: 40px; }
+  .hero-portrait .hero-name { font-family: 'Cinzel', serif; font-size: 14px; color: var(--gold); margin-top: 8px; }
+  .hero-portrait .hero-class { font-size: 10px; color: var(--dim); letter-spacing: 2px; margin-top: 3px; }
+  .stat-bars { border-top: 1px solid var(--border2); padding-top: 14px; margin-bottom: 14px; }
+  .stat-bar-wrap { margin-bottom: 8px; }
+  .stat-bar-header { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .stat-bar-header span:last-child { color: var(--text); }
+  .stat-bar-bg {
+    height: 7px; background: #1a1008; border-radius: 4px;
+    overflow: hidden; border: 1px solid var(--border2);
+  }
+  .stat-bar-fill {
+    height: 100%; border-radius: 4px;
+    transition: width .6s ease;
+  }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat-cell {
+    background: var(--bg3); border-radius: 3px;
+    padding: 8px 6px; text-align: center; border: 1px solid var(--border2);
+  }
+  .stat-cell-label { font-size: 9px; color: var(--dimmer); letter-spacing: 1px; text-transform: uppercase; }
+  .stat-cell-value { font-size: 20px; color: var(--gold); font-family: 'Cinzel', serif; font-weight: 700; }
+  .btn-abandon {
+    margin-top: 16px; width: 100%; padding: 9px;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--dimmer); font-size: 11px; cursor: pointer;
+    font-family: 'Cinzel', serif; letter-spacing: 2px;
+    border-radius: 2px; transition: all .2s;
+  }
+  .btn-abandon:hover { border-color: var(--red); color: var(--red); }
+
+  /* Main area */
+  .main-area {}
+  .history-log { margin-bottom: 14px; }
+  .history-entry {
+    background: #0d0a04; border: 1px solid var(--border2);
+    border-radius: 4px; padding: 12px 16px; margin-bottom: 8px;
+    opacity: .45;
+  }
+  .history-choice { font-size: 12px; color: var(--dim); font-style: italic; margin-bottom: 6px; }
+  .history-text { font-size: 13px; color: var(--dim); line-height: 1.6; }
+
+  .story-box {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 26px; margin-bottom: 16px;
+    position: relative; animation: fadeIn .5s ease;
+  }
+  .chapter-label {
+    font-size: 10px; letter-spacing: 3px; color: var(--gold);
+    text-transform: uppercase; margin-bottom: 16px;
+    padding-bottom: 14px; border-bottom: 1px solid var(--border2);
+  }
+  .story-text {
+    margin: 0; line-height: 2; font-size: 17px;
+    color: #d4c4a0; font-style: italic;
+  }
+  .loading-box { text-align: center; padding: 32px 0; }
+  .loading-icon { font-size: 30px; animation: pulse 1.2s infinite; }
+  .loading-text { color: var(--dim); font-style: italic; margin-top: 14px; font-size: 15px; }
+
+  .float-text {
+    position: absolute; top: 8px; right: 18px;
+    font-size: 19px; font-weight: 700;
+    font-family: 'Cinzel', serif; pointer-events: none;
+    animation: floatUp 1.5s ease forwards;
+  }
+
+  .choices-area { animation: fadeIn .5s ease .3s both; }
+  .choices-label {
+    font-size: 10px; letter-spacing: 3px; color: var(--dimmer);
+    text-transform: uppercase; margin-bottom: 12px; font-family: 'Cinzel', serif;
+  }
+  .choice-btn {
+    width: 100%; text-align: left; display: flex; align-items: center;
+    justify-content: space-between; gap: 12px;
+    padding: 15px 18px; background: #0d0a04;
+    border: 1px solid var(--border2); color: var(--text);
+    cursor: pointer; border-radius: 3px; margin-bottom: 9px;
+    font-family: 'IM Fell English', serif; font-size: 16px;
+    transition: all .2s; outline: none;
+  }
+  .choice-btn:hover {
+    background: #2a1e06 !important;
+    border-color: var(--gold) !important;
+    transform: translateX(5px);
+  }
+  .choice-num { color: var(--gold); margin-right: 10px; font-family: 'Cinzel', serif; font-size: 13px; }
+  .risk-badge {
+    font-size: 9px; letter-spacing: 2px; padding: 3px 9px;
+    border-radius: 2px; white-space: nowrap; flex-shrink: 0;
+    font-family: 'Cinzel', serif;
+  }
+
+  /* ─── GAME OVER ─── */
+  #screen-gameover {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; min-height: 100vh;
+    text-align: center; padding: 2rem; animation: fadeIn 1s ease;
+  }
+  #screen-gameover .skull { font-size: 72px; margin-bottom: 20px; }
+  #screen-gameover h1 {
+    font-family: 'Cinzel', serif; font-size: 40px; color: var(--red);
+    letter-spacing: 5px; margin-bottom: 12px;
+  }
+  #screen-gameover .epitaph {
+    color: var(--dim); font-style: italic;
+    max-width: 420px; line-height: 1.9; margin-bottom: 10px; font-size: 16px;
+  }
+  #screen-gameover .shadow-line { color: var(--dimmer); margin-bottom: 36px; font-size: 14px; }
+  #screen-gameover .btn-restart {
+    font-family: 'Cinzel', serif; font-size: 14px; letter-spacing: 3px;
+    padding: 14px 40px; background: var(--gold); color: #0d0a04;
+    border: none; cursor: pointer; text-transform: uppercase;
+    font-weight: 700; border-radius: 2px; transition: background .2s;
+  }
+  #screen-gameover .btn-restart:hover { background: var(--gold2); }
+
+  /* Mobile */
+  @media (max-width: 600px) {
+    #screen-game { grid-template-columns: 1fr; }
+    .sidebar { position: static; }
+    .stat-grid { grid-template-columns: repeat(3,1fr); }
+    #screen-intro h1 { font-size: 34px; }
+    .classes-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════ API KEY ═══════════════════════ -->
+<div id="screen-apikey" class="screen">
+  <div class="skull">🗝️</div>
+  <h1>DUNGEON AI</h1>
+  <p class="subtitle">Powered by Claude Sonnet</p>
+  <div class="divider"></div>
+  <p class="desc">
+    Para jugar necesitás una API Key de Anthropic.<br>
+    Tu clave nunca se envía a ningún servidor propio —<br>
+    va directamente a Anthropic desde tu navegador.
+  </p>
+  <label class="field-label" for="apikey-input">Tu API Key de Anthropic</label>
+  <input type="password" id="apikey-input" placeholder="sk-ant-api03-..." autocomplete="off"/>
+  <p class="hint">
+    Obtené tu clave en <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> →
+    API Keys.<br>
+    Requiere crédito activo en tu cuenta.
+  </p>
+  <button class="btn-enter" onclick="handleApiKey()">Ingresar a la Mazmorra →</button>
+  <p class="error-msg" id="apikey-error"></p>
+</div>
+
+<!-- ═══════════════════════ INTRO ═══════════════════════ -->
+<div id="screen-intro" class="screen hidden">
+  <div class="hero-icon">⚔️</div>
+  <h1>DUNGEON AI</h1>
+  <p class="powered">Powered by Claude Sonnet</p>
+  <div class="divider"></div>
+  <p class="tagline">
+    Adéntrate en mazmorras generadas por inteligencia artificial.<br>
+    Cada decisión moldea tu destino. Ninguna historia se repite.
+  </p>
+  <button class="btn-start" onclick="showScreen('create')">Comenzar Aventura</button>
+  <p class="api-note" onclick="showScreen('apikey')">🔑 Cambiar API Key</p>
+</div>
+
+<!-- ═══════════════════════ CREATE ═══════════════════════ -->
+<div id="screen-create" class="screen hidden">
+  <h2>CREA TU HÉROE</h2>
+  <div class="divider"></div>
+
+  <div class="field-block">
+    <label class="field-label-sm" for="hero-name">Nombre del Héroe</label>
+    <input class="name-input" type="text" id="hero-name" placeholder="Ingresa tu nombre..." maxlength="30"/>
+  </div>
+
+  <div class="field-block">
+    <label class="field-label-sm">Clase</label>
+    <div class="classes-grid" id="classes-grid"></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn-back" onclick="showScreen('intro')">← Volver</button>
+    <button class="btn-begin disabled" id="btn-begin" onclick="startGame()">COMENZAR →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════ GAME ═══════════════════════ -->
+<div id="screen-game" class="screen hidden">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-box">
+      <div class="hero-portrait">
+        <div class="icon" id="g-icon"></div>
+        <div class="hero-name" id="g-name"></div>
+        <div class="hero-class" id="g-class"></div>
+      </div>
+      <div class="stat-bars" id="stat-bars"></div>
+      <div class="stat-grid" id="stat-grid"></div>
+      <button class="btn-abandon" onclick="resetGame()">ABANDONAR</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main-area">
+    <div class="history-log" id="history-log"></div>
+    <div class="story-box" id="story-box">
+      <div class="chapter-label" id="chapter-label">⚔ Capítulo 0</div>
+      <div id="story-content">
+        <div class="loading-box">
+          <div class="loading-icon">🔮</div>
+          <p class="loading-text">El Dungeon Master teje tu destino...</p>
+        </div>
+      </div>
+      <div id="float-container"></div>
+    </div>
+    <div class="choices-area hidden" id="choices-area">
+      <div class="choices-label">¿Qué harás?</div>
+      <div id="choices-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ GAME OVER ═══════════════════════ -->
+<div id="screen-gameover" class="screen hidden">
+  <div class="skull">💀</div>
+  <h1>HAS CAÍDO</h1>
+  <p class="epitaph" id="go-epitaph"></p>
+  <p class="shadow-line">Las sombras reclaman otra alma.</p>
+  <button class="btn-restart" onclick="resetGame()">Nueva Partida</button>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────
+const CLASSES = [
+  { id:'warrior', name:'Guerrero', icon:'⚔️', desc:'Fuerza bruta y escudo de acero', color:'#c0392b', stats:{hp:120,mp:30,atk:15,def:12} },
+  { id:'mage',    name:'Mago',     icon:'🔮', desc:'Domina los secretos del Arcano', color:'#8e44ad', stats:{hp:70,mp:100,atk:20,def:5}  },
+  { id:'rogue',   name:'Ladrón',   icon:'🗡️', desc:'Sombras, sigilo y veneno',       color:'#27ae60', stats:{hp:90,mp:50,atk:18,def:8}   },
+];
+
+// ─── STATE ──────────────────────────────────────────────────────
+let apiKey = '';
+let selectedClass = null;
+let gameState = null;
+let historyLog = [];
+let floatIdCounter = 0;
+
+// ─── SCREEN MANAGEMENT ──────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  const el = document.getElementById('screen-' + id);
+  el.classList.remove('hidden');
+  el.classList.add('screen');
+}
+
+// ─── API KEY ─────────────────────────────────────────────────────
+function handleApiKey() {
+  const val = document.getElementById('apikey-input').value.trim();
+  const err = document.getElementById('apikey-error');
+  if (!val.startsWith('sk-')) {
+    err.textContent = 'La clave debe comenzar con "sk-". Revisá que la copiaste completa.';
+    return;
+  }
+  err.textContent = '';
+  apiKey = val;
+  buildClassCards();
+  showScreen('intro');
+}
+
+document.getElementById('apikey-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') handleApiKey();
+});
+
+// ─── CLASS CARDS ─────────────────────────────────────────────────
+function buildClassCards() {
+  const grid = document.getElementById('classes-grid');
+  grid.innerHTML = '';
+  CLASSES.forEach(cls => {
+    const card = document.createElement('div');
+    card.className = 'class-card';
+    card.dataset.id = cls.id;
+    card.innerHTML = `
+      <div class="class-icon">${cls.icon}</div>
+      <div class="class-name" style="color:${cls.color}">${cls.name}</div>
+      <div class="class-desc">${cls.desc}</div>
+      <div class="class-stats">HP ${cls.stats.hp} · MP ${cls.stats.mp}</div>
+    `;
+    card.addEventListener('click', () => selectClass(cls.id));
+    grid.appendChild(card);
+  });
+
+  document.getElementById('hero-name').addEventListener('input', updateBeginBtn);
+}
+
+function selectClass(id) {
+  selectedClass = id;
+  document.querySelectorAll('.class-card').forEach(c => {
+    c.classList.toggle('selected', c.dataset.id === id);
+  });
+  updateBeginBtn();
+}
+
+function updateBeginBtn() {
+  const name = document.getElementById('hero-name').value.trim();
+  const btn = document.getElementById('btn-begin');
+  if (name && selectedClass) {
+    btn.className = 'btn-begin ready';
+  } else {
+    btn.className = 'btn-begin disabled';
+  }
+}
+
+// ─── GAME INIT ────────────────────────────────────────────────────
+function startGame() {
+  const name = document.getElementById('hero-name').value.trim();
+  if (!name || !selectedClass) return;
+  const cls = CLASSES.find(c => c.id === selectedClass);
+  gameState = {
+    name, cls,
+    hp: cls.stats.hp, maxHp: cls.stats.hp,
+    mp: cls.stats.mp, maxMp: cls.stats.mp,
+    gold: 10, xp: 0, level: 1, turn: 0,
+  };
+  historyLog = [];
+  showScreen('game');
+  renderSidebar();
+  callClaude(null);
+}
+
+// ─── SIDEBAR ─────────────────────────────────────────────────────
+function renderSidebar() {
+  const gs = gameState;
+  document.getElementById('g-icon').textContent = gs.cls.icon;
+  document.getElementById('g-name').textContent = gs.name;
+  document.getElementById('g-class').textContent = gs.cls.name.toUpperCase();
+  document.getElementById('chapter-label').textContent = `⚔ Capítulo ${gs.turn}`;
+
+  const bars = [
+    { label:'Vida', value:gs.hp, max:gs.maxHp, color:'#c0392b' },
+    { label:'Maná', value:gs.mp, max:gs.maxMp, color:'#8e44ad' },
+    { label:'XP',   value:gs.xp%(gs.level*50), max:gs.level*50, color:'#27ae60' },
+  ];
+  document.getElementById('stat-bars').innerHTML = bars.map(b => {
+    const pct = Math.max(0, Math.min(100, (b.value/b.max)*100));
+    return `<div class="stat-bar-wrap">
+      <div class="stat-bar-header"><span>${b.label}</span><span>${b.value}/${b.max}</span></div>
+      <div class="stat-bar-bg"><div class="stat-bar-fill" style="width:${pct}%;background:${b.color}"></div></div>
+    </div>`;
+  }).join('');
+
+  const cells = [
+    { label:'Nivel', value:gs.level },
+    { label:'Oro',   value:gs.gold  },
+    { label:'Turno', value:gs.turn  },
+  ];
+  document.getElementById('stat-grid').innerHTML = cells.map(c =>
+    `<div class="stat-cell">
+      <div class="stat-cell-label">${c.label}</div>
+      <div class="stat-cell-value">${c.value}</div>
+    </div>`
+  ).join('');
+}
+
+// ─── FLOATING TEXT ────────────────────────────────────────────────
+function addFloat(text, type) {
+  const colors = { damage:'#e74c3c', heal:'#2ecc71', gold:'#f1c40f', xp:'#9b59b6' };
+  const el = document.createElement('div');
+  el.className = 'float-text';
+  el.style.color = colors[type] || '#fff';
+  el.textContent = text;
+  document.getElementById('float-container').appendChild(el);
+  setTimeout(() => el.remove(), 1600);
+}
+
+// ─── CLAUDE API ───────────────────────────────────────────────────
+async function callClaude(choiceText) {
+  setLoading(true);
+  const gs = gameState;
+
+  const sysPrompt = `Eres un Dungeon Master oscuro y literario para un RPG de fantasía medieval. Narras en ESPAÑOL con prosa evocadora y dramática.
+El jugador es ${gs.name}, un ${gs.cls.name} (HP: ${gs.hp}/${gs.maxHp}, Oro: ${gs.gold}, Nivel: ${gs.level}, Turno: ${gs.turn}).
+
+REGLAS:
+- Narra entre 60-100 palabras, oscuro y atmosférico.
+- Da exactamente 3 opciones de acción, variadas (combate, ingenio, exploración).
+- Varía los eventos: combate, hallazgos, NPCs, trampas, tesoros, misterios.
+- En turnos de combate puedes herir al jugador (-5 a -25 HP) o darlo por muerto si HP <= 0.
+- Recompensas: oro (+1 a +20), XP (+5 a +30), curaciones (+5 a +20 HP).
+- Responde SOLO con JSON válido, sin markdown, sin explicaciones.
+
+FORMATO JSON:
+{
+  "narration": "texto narrativo aquí",
+  "choices": [
+    {"id": 1, "text": "texto de opción", "risk": "bajo"},
+    {"id": 2, "text": "texto de opción", "risk": "medio"},
+    {"id": 3, "text": "texto de opción", "risk": "alto"}
+  ],
+  "effects": {
+    "hp_change": 0,
+    "gold_change": 0,
+    "xp_gain": 10,
+    "event": "exploration"
+  }
+}`;
+
+  const msg = gs.turn === 0
+    ? 'Comienza la aventura con una escena de apertura dramática en una taberna oscura o en las puertas de una mazmorra.'
+    : `El héroe elige: "${choiceText}". Continúa la historia con consecuencias de esa elección.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: sysPrompt,
+        messages: [{ role:'user', content: msg }],
+      }),
+    });
+
+    const data = await res.json();
+
+    if (data.error) {
+      setStory(`⚠️ Error de API: ${data.error.message}`);
+      setChoices([{ id:1, text:'Intentar de nuevo', risk:'bajo' }]);
+      setLoading(false);
+      return;
+    }
+
+    const raw = data.content?.[0]?.text || '{}';
+    const clean = raw.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(clean);
+    const eff = parsed.effects || {};
+
+    gameState.turn++;
+
+    if (eff.hp_change) {
+      gameState.hp = Math.min(gameState.maxHp, Math.max(0, gameState.hp + eff.hp_change));
+      addFloat(eff.hp_change < 0 ? `${eff.hp_change} HP` : `+${eff.hp_change} HP`, eff.hp_change < 0 ? 'damage' : 'heal');
+    }
+    if (eff.gold_change) {
+      gameState.gold = Math.max(0, gameState.gold + eff.gold_change);
+      if (eff.gold_change > 0) addFloat(`+${eff.gold_change} ORO`, 'gold');
+    }
+    if (eff.xp_gain) {
+      gameState.xp += eff.xp_gain;
+      if (gameState.xp >= gameState.level * 50) {
+        gameState.level++;
+        gameState.maxHp += 10;
+        gameState.hp = gameState.maxHp;
+        addFloat('⬆ NIVEL UP!', 'xp');
+      }
+    }
+
+    historyLog.push({ narration: parsed.narration, choice: choiceText });
+    renderSidebar();
+    renderHistory();
+    setStory(parsed.narration || '');
+    setChoices(parsed.choices || []);
+
+    if (gameState.hp <= 0) {
+      setTimeout(() => {
+        document.getElementById('go-epitaph').textContent =
+          `${gameState.name} llegó hasta el turno ${gameState.turn} con ${gameState.gold} monedas de oro y nivel ${gameState.level}.`;
+        showScreen('gameover');
+      }, 2000);
+    }
+
+  } catch(e) {
+    setStory('Las sombras murmuran algo ininteligible... (Error al contactar al Dungeon Master)');
+    setChoices([{ id:1, text:'Intentar de nuevo', risk:'bajo' }]);
+  }
+
+  setLoading(false);
+}
+
+// ─── UI HELPERS ───────────────────────────────────────────────────
+function setLoading(isLoading) {
+  const content = document.getElementById('story-content');
+  const choicesArea = document.getElementById('choices-area');
+  if (isLoading) {
+    content.innerHTML = `<div class="loading-box"><div class="loading-icon">🔮</div><p class="loading-text">El Dungeon Master teje tu destino...</p></div>`;
+    choicesArea.classList.add('hidden');
+  }
+}
+
+function setStory(text) {
+  document.getElementById('story-content').innerHTML = `<p class="story-text">${text}</p>`;
+}
+
+function setChoices(choices) {
+  const area = document.getElementById('choices-area');
+  const list = document.getElementById('choices-list');
+  if (!choices || choices.length === 0) { area.classList.add('hidden'); return; }
+
+  const riskColor = r => r==='alto'?'#e74c3c':r==='medio'?'#f39c12':'#2ecc71';
+  const riskLabel = r => r==='alto'?'RIESGOSO':r==='medio'?'MODERADO':'SEGURO';
+
+  list.innerHTML = choices.map((ch, i) => `
+    <button class="choice-btn" onclick="handleChoice(${i})" data-text="${encodeURIComponent(ch.text)}">
+      <span><span class="choice-num">${i+1}.</span>${ch.text}</span>
+      <span class="risk-badge" style="border:1px solid ${riskColor(ch.risk)};color:${riskColor(ch.risk)}">${riskLabel(ch.risk)}</span>
+    </button>
+  `).join('');
+
+  area.classList.remove('hidden');
+}
+
+function handleChoice(idx) {
+  const btns = document.querySelectorAll('.choice-btn');
+  const text = decodeURIComponent(btns[idx].dataset.text);
+  callClaude(text);
+}
+
+function renderHistory() {
+  const log = document.getElementById('history-log');
+  const recent = historyLog.slice(-3, -1);
+  log.innerHTML = recent.map(entry => `
+    <div class="history-entry">
+      ${entry.choice ? `<div class="history-choice">→ ${entry.choice}</div>` : ''}
+      <div class="history-text">${entry.narration}</div>
+    </div>
+  `).join('');
+}
+
+function resetGame() {
+  gameState = null;
+  historyLog = [];
+  selectedClass = null;
+  document.getElementById('hero-name').value = '';
+  document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selected'));
+  updateBeginBtn();
+  showScreen('intro');
+}
+</script>
+</body>
+</html>
